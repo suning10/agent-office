@@ -1,0 +1,72 @@
+[
+  {
+    "id": "zf-open-proposal-word-count",
+    "dept_id": "dept_zfxy",
+    "query": "双学位硕士研究生的开题报告字数要求是多少？",
+    "relevant_files": ["研究生开题报告通知-中法未来.docx"],
+    "expected_terms": ["不少于5000字"]
+  },
+  {
+    "id": "zf-literature-count",
+    "dept_id": "dept_zfxy",
+    "query": "开题文献综述需要阅读多少篇文献，其中外文多少篇？",
+    "relevant_files": ["研究生开题报告通知-中法未来.docx"],
+    "expected_terms": ["不少于30篇", "不少于15篇"]
+  },
+  {
+    "id": "zf-proposal-deadline",
+    "dept_id": "dept_zfxy",
+    "query": "研究生最晚什么时候要在系统录入开题信息？",
+    "relevant_files": ["研究生开题报告通知-中法未来.docx"],
+    "expected_terms": ["2026年7月10日前"]
+  },
+  {
+    "id": "zf-defense-location",
+    "dept_id": "dept_zfxy",
+    "query": "中法未来科技学院研究生开题答辩地点在哪里？",
+    "relevant_files": ["开题答辩分组安排.docx"],
+    "expected_terms": ["教学一号楼2001"]
+  },
+  {
+    "id": "zf-luggage-valuables",
+    "dept_id": "dept_zfxy",
+    "query": "宿舍寄存行李中能否存放电子产品和学位证书？",
+    "relevant_files": ["中法宿舍行李寄存承诺书.docx"],
+    "expected_terms": ["不包含", "电子产品", "学位证书"]
+  },
+  {
+    "id": "zf-assessment-count",
+    "dept_id": "dept_zfxy",
+    "query": "心理测评登录后需要完成几个测评？",
+    "relevant_files": ["心理测评操作说明.pdf"],
+    "expected_terms": ["3个测评"]
+  },
+  {
+    "id": "hq-emergency-phone",
+    "dept_id": "dept_hqaq",
+    "query": "校园24小时应急电话是多少？",
+    "relevant_files": ["关于校园防汛应急响应措施的通知.docx", "暴雨天气致全体师生的温馨提醒.docx"],
+    "expected_terms": ["0571-28881110"]
+  },
+  {
+    "id": "hq-venue-close-time",
+    "dept_id": "dept_hqaq",
+    "query": "防汛响应期间文体场馆和图书馆从什么时候暂停开放？",
+    "relevant_files": ["关于校园防汛应急响应措施的通知.docx"],
+    "expected_terms": ["8月15日8:00起"]
+  },
+  {
+    "id": "hq-gate-control",
+    "dept_id": "dept_hqaq",
+    "query": "防汛期间车辆可以从哪些校门通行？",
+    "relevant_files": ["关于校园防汛应急响应措施的通知.docx"],
+    "expected_terms": ["西门", "东门"]
+  },
+  {
+    "id": "hq-typhoon-outdoor",
+    "dept_id": "dept_hqaq",
+    "query": "台风影响期间可以外出围观风雨或涉水拍照吗？",
+    "relevant_files": ["关于防御第9号超强台风“巴威”的安全提示(1)(1).pdf"],
+    "expected_terms": ["非必要不外出", "杜绝围观风雨", "涉水拍照"]
+  }
+]

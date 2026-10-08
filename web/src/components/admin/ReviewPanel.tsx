@@ -12,7 +12,13 @@ import { phaseBadgeClass, phaseLabel } from "./labels";
 
 type VerdictMap = Record<number, { correct: boolean; correction: string }>;
 
-export default function ReviewPanel({ data, refresh }: { data: Dashboard; refresh: () => void }) {
+export default function ReviewPanel({
+  data,
+  refresh,
+}: {
+  data: Dashboard;
+  refresh: () => void;
+}) {
   const [deptId, setDeptId] = useState("");
   const [status, setStatus] = useState("");
   const [orders, setOrders] = useState<ReviewOrder[]>([]);
@@ -24,7 +30,9 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
 
   const load = useCallback(async () => {
     try {
-      setOrders(await listReviewOrders(deptId || undefined, status || undefined));
+      setOrders(
+        await listReviewOrders(deptId || undefined, status || undefined),
+      );
     } catch (e) {
       setErr(String(e instanceof Error ? e.message : e));
     }
@@ -39,13 +47,25 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
   function setVerdict(orderId: string, index: number, correct: boolean) {
     setVerdicts((prev) => {
       const cur = prev[orderId] || {};
-      return { ...prev, [orderId]: { ...cur, [index]: { correct, correction: cur[index]?.correction || "" } } };
+      return {
+        ...prev,
+        [orderId]: {
+          ...cur,
+          [index]: { correct, correction: cur[index]?.correction || "" },
+        },
+      };
     });
   }
   function setCorrection(orderId: string, index: number, correction: string) {
     setVerdicts((prev) => {
       const cur = prev[orderId] || {};
-      return { ...prev, [orderId]: { ...cur, [index]: { correct: cur[index]?.correct ?? false, correction } } };
+      return {
+        ...prev,
+        [orderId]: {
+          ...cur,
+          [index]: { correct: cur[index]?.correct ?? false, correction },
+        },
+      };
     });
   }
 
@@ -56,7 +76,9 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
     try {
       const vmap = verdicts[order._id] || {};
       if (Object.keys(vmap).length !== order.qa_pairs.length) {
-        setErr(`请逐题选择“正确”或“错误”（已审核 ${Object.keys(vmap).length}/${order.qa_pairs.length}）`);
+        setErr(
+          `请逐题选择“正确”或“错误”（已审核 ${Object.keys(vmap).length}/${order.qa_pairs.length}）`,
+        );
         return;
       }
       const list = order.qa_pairs.map((_, i) => ({
@@ -66,7 +88,7 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
       }));
       const res = await submitReview(order._id, list);
       setMsg(
-        `审核完成：${res.correct}/${res.total} 正确（准确率 ${Math.round((res.accuracy ?? 0) * 100)}%）。部门 Loop 阶段已按正确率自动推进。`
+        `审核完成：${res.correct}/${res.total} 正确（准确率 ${Math.round((res.accuracy ?? 0) * 100)}%）。部门 Loop 阶段已按正确率自动推进。`,
       );
       setExpanded(null);
       await load();
@@ -83,11 +105,18 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
   return (
     <div>
       <h2 className={styles.title}>
-        审核中心 <span className={styles.muted}>（新文档自动出题 → 系统作答 → 人工审核 → 积累反馈）</span>
+        审核中心{" "}
+        <span className={styles.muted}>
+          （新文档自动出题 → 系统作答 → 人工审核 → 积累反馈）
+        </span>
       </h2>
 
       <div className={styles.row} style={{ marginBottom: 16 }}>
-        <select className={styles.select} value={deptId} onChange={(e) => setDeptId(e.target.value)}>
+        <select
+          className={styles.select}
+          value={deptId}
+          onChange={(e) => setDeptId(e.target.value)}
+        >
           <option value="">全部部门</option>
           {depts.map((d) => (
             <option key={d._id} value={d._id}>
@@ -95,7 +124,11 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
             </option>
           ))}
         </select>
-        <select className={styles.select} value={status} onChange={(e) => setStatus(e.target.value)}>
+        <select
+          className={styles.select}
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
           <option value="">全部状态</option>
           <option value="pending">待审核</option>
           <option value="reviewed">已审核</option>
@@ -104,11 +137,21 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
         <span className={styles.muted}>待审核 {pendingCount} 单</span>
       </div>
 
-      {msg && <div style={{ marginBottom: 12, color: "#15803d", fontSize: 13 }}>{msg}</div>}
-      {err && <div className={styles.error} style={{ marginBottom: 12 }}>{err}</div>}
+      {msg && (
+        <div style={{ marginBottom: 12, color: "#15803d", fontSize: 13 }}>
+          {msg}
+        </div>
+      )}
+      {err && (
+        <div className={styles.error} style={{ marginBottom: 12 }}>
+          {err}
+        </div>
+      )}
 
       {orders.length === 0 ? (
-        <div className={styles.empty}>暂无审核单。上传新文档后系统会自动生成审核单。</div>
+        <div className={styles.empty}>
+          暂无审核单。上传新文档后系统会自动生成审核单。
+        </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {orders.map((order) => {
@@ -119,7 +162,8 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
                   <div>
                     <h3 style={{ marginBottom: 4 }}>{order.doc_title}</h3>
                     <div className={styles.muted}>
-                      {order._id} · {order.dept_id} · {order.created_at?.slice(0, 19).replace("T", " ")}
+                      {order._id} · {order.dept_id} ·{" "}
+                      {order.created_at?.slice(0, 19).replace("T", " ")}
                     </div>
                   </div>
                   <div className={styles.row}>
@@ -135,17 +179,20 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
                         (order.status === "pending"
                           ? styles.badgeAmber
                           : order.status === "auto_approved"
-                          ? styles.badgeGreen
-                          : styles.badgeBlue)
+                            ? styles.badgeGreen
+                            : styles.badgeBlue)
                       }
                     >
                       {order.status === "pending"
                         ? "待审核"
                         : order.status === "reviewed"
-                        ? "已审核"
-                        : "自动通过"}
+                          ? "已审核"
+                          : "自动通过"}
                     </span>
-                    <button className={styles.btnGhost + " " + styles.btnSm} onClick={() => setExpanded(open ? null : order._id)}>
+                    <button
+                      className={styles.btnGhost + " " + styles.btnSm}
+                      onClick={() => setExpanded(open ? null : order._id)}
+                    >
                       {open ? "收起" : "查看详情"}
                     </button>
                   </div>
@@ -163,18 +210,29 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
                             {i + 1}. {qa.question}
                           </div>
                           {qa.expected && (
-                            <div className={styles.muted} style={{ marginBottom: 6 }}>
+                            <div
+                              className={styles.muted}
+                              style={{ marginBottom: 6 }}
+                            >
                               参考答案要点：{qa.expected}
                             </div>
                           )}
-                          <div className={styles.qaAnswer}>系统回答：{qa.answer}</div>
+                          <div className={styles.qaAnswer}>
+                            系统回答：{qa.answer}
+                          </div>
                           {qa.citations?.length > 0 && (
                             <div className={styles.qaMeta}>
                               <b>引用：</b>
                               {qa.citations.map((c, j) => (
                                 <span key={j} className={styles.citation}>
-                                  [{c.chunk_index != null ? c.chunk_index + 1 : "?"}] {c.doc_title || c.doc_id}
-                                  {c.section_path?.length ? " · " + c.section_path.join(" > ") : ""}
+                                  [
+                                  {c.chunk_index != null
+                                    ? c.chunk_index + 1
+                                    : "?"}
+                                  ] {c.doc_title || c.doc_id}
+                                  {c.section_path?.length
+                                    ? " · " + c.section_path.join(" > ")
+                                    : ""}
                                 </span>
                               ))}
                             </div>
@@ -191,7 +249,9 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
                                 </button>
                                 <button
                                   className={`${styles.verdictBtn} ${correct === false ? styles.incorrectSel : ""}`}
-                                  onClick={() => setVerdict(order._id, i, false)}
+                                  onClick={() =>
+                                    setVerdict(order._id, i, false)
+                                  }
                                 >
                                   ✗ 错误
                                 </button>
@@ -201,14 +261,21 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
                                     style={{ flex: 1 }}
                                     placeholder="填写纠正意见（将作为反馈沉淀）"
                                     value={v?.correction || ""}
-                                    onChange={(e) => setCorrection(order._id, i, e.target.value)}
+                                    onChange={(e) =>
+                                      setCorrection(
+                                        order._id,
+                                        i,
+                                        e.target.value,
+                                      )
+                                    }
                                   />
                                 )}
                               </div>
                             </>
                           ) : (
                             <div className={styles.qaMeta}>
-                              审核结果：{qa.verdict === "rejected" ? "✗ 错误" : "✓ 正确"}
+                              审核结果：
+                              {qa.verdict === "rejected" ? "✗ 错误" : "✓ 正确"}
                               {qa.correction ? ` · 纠正：${qa.correction}` : ""}
                             </div>
                           )}
@@ -218,10 +285,16 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
 
                     {order.status === "pending" && (
                       <div className={styles.row}>
-                        <button className={styles.btn} disabled={busy} onClick={() => onSubmit(order)}>
+                        <button
+                          className={styles.btn}
+                          disabled={busy}
+                          onClick={() => onSubmit(order)}
+                        >
                           {busy ? "提交中…" : "提交审核结果"}
                         </button>
-                        <span className={styles.muted}>提交后写入题库并累计正确率，超过阈值将取消该部门人工审核。</span>
+                        <span className={styles.muted}>
+                          提交后写入题库并累计正确率，超过阈值将取消该部门人工审核。
+                        </span>
                       </div>
                     )}
                   </div>
@@ -254,7 +327,13 @@ export default function ReviewPanel({ data, refresh }: { data: Dashboard; refres
               <tr key={d._id}>
                 <td>{d.name}</td>
                 <td>
-                  <span className={styles.badge + " " + phaseBadgeClass(d.loop_phase)}>{phaseLabel(d.loop_phase)}</span>
+                  <span
+                    className={
+                      styles.badge + " " + phaseBadgeClass(d.loop_phase)
+                    }
+                  >
+                    {phaseLabel(d.loop_phase)}
+                  </span>
                 </td>
                 <td>{s.total}</td>
                 <td>{s.correct}</td>

@@ -5,24 +5,37 @@ import { agents as fetchAgents, type AgentInfo } from "@/lib/api";
 import styles from "./admin.module.css";
 import { phaseBadgeClass, phaseLabel } from "./labels";
 
-export default function AgentPanel({ data }: { data: import("@/lib/api").Dashboard }) {
+export default function AgentPanel({
+  data,
+}: {
+  data: import("@/lib/api").Dashboard;
+}) {
   const [rows, setRows] = useState<AgentInfo[]>([]);
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    fetchAgents().then(setRows).catch((e) => setErr(String(e instanceof Error ? e.message : e)));
+    fetchAgents()
+      .then(setRows)
+      .catch((e) => setErr(String(e instanceof Error ? e.message : e)));
   }, []);
 
   return (
     <div>
       <h2 className={styles.title}>
         部门子 Agent 可视化
-        <span className={styles.muted}>（每个部门独立 Agent 栈：Intent + Retrieval + Answer + Verifier）</span>
+        <span className={styles.muted}>
+          （每个部门独立 Agent 栈：Intent + Retrieval + Answer + Verifier）
+        </span>
       </h2>
       <div className={styles.muted} style={{ marginBottom: 16 }}>
-        K8s 按部门粒度部署独立 Deployment + HPA，冷门部门 1 副本、热门部门（教务处/学生处）峰值弹性至 20 副本。
+        K8s 按部门粒度部署独立 Deployment + HPA，冷门部门 1
+        副本、热门部门（教务处/学生处）峰值弹性至 20 副本。
       </div>
-      {err && <div className={styles.error} style={{ marginBottom: 12 }}>{err}</div>}
+      {err && (
+        <div className={styles.error} style={{ marginBottom: 12 }}>
+          {err}
+        </div>
+      )}
 
       <div className={styles.grid2}>
         {rows.map((a) => {
@@ -31,15 +44,29 @@ export default function AgentPanel({ data }: { data: import("@/lib/api").Dashboa
             <div key={a._id} className={styles.card}>
               <div className={styles.rowBetween}>
                 <h3>{a.name}</h3>
-                <span className={styles.badge + " " + phaseBadgeClass(a.loop_phase)}>{phaseLabel(a.loop_phase)}</span>
+                <span
+                  className={styles.badge + " " + phaseBadgeClass(a.loop_phase)}
+                >
+                  {phaseLabel(a.loop_phase)}
+                </span>
               </div>
               <div className={styles.muted} style={{ marginBottom: 10 }}>
                 {a.name_en} · {a._id}
               </div>
 
               <div className={styles.row} style={{ marginBottom: 10, gap: 5 }}>
-                {["Orchestrator", "Intent", "Retrieval", "Answer", "Verifier"].map((name) => (
-                  <span key={name} className={styles.badge + " " + styles.badgeBlue} style={{ fontSize: 10 }}>
+                {[
+                  "Orchestrator",
+                  "Intent",
+                  "Retrieval",
+                  "Answer",
+                  "Verifier",
+                ].map((name) => (
+                  <span
+                    key={name}
+                    className={styles.badge + " " + styles.badgeBlue}
+                    style={{ fontSize: 10 }}
+                  >
                     {name}
                   </span>
                 ))}
@@ -73,7 +100,9 @@ export default function AgentPanel({ data }: { data: import("@/lib/api").Dashboa
                   </tr>
                   <tr>
                     <th>审核正确率</th>
-                    <td>{acc}%（{a.review_stats?.total ?? 0} 样本）</td>
+                    <td>
+                      {acc}%（{a.review_stats?.total ?? 0} 样本）
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -84,7 +113,11 @@ export default function AgentPanel({ data }: { data: import("@/lib/api").Dashboa
                     高频问题热点（部门记忆）
                   </div>
                   {a.hot_queries.map((h, i) => (
-                    <span key={i} className={styles.badge + " " + styles.badgeGray} style={{ margin: "0 4px 4px 0" }}>
+                    <span
+                      key={i}
+                      className={styles.badge + " " + styles.badgeGray}
+                      style={{ margin: "0 4px 4px 0" }}
+                    >
                       {h.q} ×{h.n}
                     </span>
                   ))}

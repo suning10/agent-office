@@ -10,7 +10,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    # 从 backend/ 本地运行时读仓库根目录的 .env；后者优先级更高
+    model_config = SettingsConfigDict(env_file=("../.env", ".env"), env_file_encoding="utf-8", extra="ignore")
 
     # ---- 服务 ----
     app_name: str = "文枢 · 跨部门文档处理与问答助手"

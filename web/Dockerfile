@@ -11,7 +11,8 @@ ARG BACKEND_URL=http://backend:8000
 ENV BACKEND_URL=$BACKEND_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+# 项目可能没有 public 目录，确保其存在以便 runtime 阶段 COPY
+RUN mkdir -p public && npm run build
 
 FROM node:24-alpine AS runtime
 WORKDIR /app

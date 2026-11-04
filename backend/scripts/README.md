@@ -4,7 +4,7 @@
 |---|---|
 | `seed_data.py` | 幂等种子数据：部门 / 术语表 / 校历 / 默认 Rules&Hooks / 3 条可执行基线 Skill |
 | `seed_demo_data.py` | 可选演示扩展：模拟文档、审核单、badcase 和部门 Skill；不属于正常启动必需步骤 |
-| `doctor.py` | 检查 DeepSeek、中转站、Embedding/Reranker 等模型连接 |
+| `doctor.py` | 检查 DeepSeek 连接与本地 Embedding/Reranker 模型 |
 | `ingest_department_files.py` | 导入 `department_files` 示例文档 |
 | `loop_worker.py` | 旧版定时 Worker（兼容保留；生产使用 `async_worker.py`） |
 | `async_worker.py` | Redis Stream Worker：文档入库、反馈唤醒、Loop |

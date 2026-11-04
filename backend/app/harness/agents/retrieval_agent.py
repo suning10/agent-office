@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 from app.llm.embeddings import EmbeddingClient
 from app.retrieval.hybrid import HybridRetriever
+from app.utils import tracing
 from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -16,6 +17,7 @@ class RetrievalAgent:
         self.embeddings = embeddings
         self.store = store
 
+    @tracing.observe(name="retrieval", as_type="retriever")
     async def retrieve(self, queries: list[str], dept_ids: Optional[list[str]] = None, top_k: int = 5) -> list[dict[str, Any]]:
         """多 query × 多部门并行检索，合并去重。"""
         if not queries:

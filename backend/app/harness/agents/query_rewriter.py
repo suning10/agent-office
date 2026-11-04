@@ -5,6 +5,7 @@ from typing import Optional
 from app.harness.base import Intent
 from app.llm.client import ChatMessage, LLMClient
 from app.storage.store import DataStore
+from app.utils import tracing
 from app.utils.logging import get_logger
 from app.integrations.pi_runtime import PiAgentRuntimeClient
 
@@ -32,6 +33,7 @@ class QueryRewriter:
         self.pi_runtime = pi_runtime
         self.timeout = timeout
 
+    @tracing.observe(name="query_rewriter", as_type="agent")
     async def rewrite(self, query: str, intent: Optional[Intent] = None, memory_context: str = "") -> list[str]:
         glossary = await self.store.list_glossary()
         gloss_text = "; ".join(f"{g['canonical']}≈{'/'.join(g.get('synonyms', []))}" for g in glossary[:50])

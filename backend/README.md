@@ -8,7 +8,7 @@
 backend/
 ├── app/
 │   ├── main.py              # FastAPI 入口 + lifespan + /metrics + 种子账号/字段回填
-│   ├── config.py            # 环境配置（DeepSeek / 中转站 / 存储 / Loop / 鉴权 / 审核）
+│   ├── config.py            # 环境配置（DeepSeek / 存储 / Loop / 鉴权 / 审核）
 │   ├── deps.py              # 依赖装配（构建全局单例容器，含 auth / review_engine）
 │   ├── auth.py              # 鉴权：用户账号 + HMAC Token + 角色（student/admin）
 │   ├── api/                 # L1 接入层
@@ -33,7 +33,7 @@ backend/
 │   ├── memory/              # 事实平面 + 会话/情景/用户/组织/学习五个记忆平面
 │   ├── retrieval/           # L4 BM25 + 向量 + 混合检索 + 重排
 │   ├── pipeline/            # 文档解析 / 清洗 / 切片 / 元数据 / 索引 / 冲突检测
-│   ├── llm/                 # DeepSeek + 中转站客户端 + Embedding
+│   ├── llm/                 # DeepSeek 客户端 + 本地 Embedding
 │   ├── storage/             # MongoDB / Redis / 统一存储(含内存回退)
 │   └── utils/               # 日志 / Prometheus 指标
 ├── scripts/                 # 种子数据 / 演示数据 / 导入部门文档 / 依赖等待
@@ -67,13 +67,27 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # 配置密钥
-cp ../.env.example ../.env   # 编辑填入 DEEPSEEK_API_KEY / RELAY_API_KEY
+cp ../.env.example ../.env   # 编辑填入 DEEPSEEK_API_KEY
 
 # 内存模式启动（无需 MongoDB/Redis，快速体验）
 export STORAGE_MODE=memory
 export EMBEDDING_PROVIDER=hash   # 无网络时用确定性向量
 uvicorn app.main:app --reload --port 8000
 ```
+
+### 本地 Ollama 测试（无需任何 API Key）
+
+```bash
+ollama pull qwen3.5:0.8b && ollama pull nomic-embed-text
+export STORAGE_MODE=memory PI_AGENT_ENABLED=false RERANKER_ENABLED=false
+export LLM_PROVIDER=ollama OLLAMA_MODEL=qwen3.5:0.8b
+export EMBEDDING_PROVIDER=ollama EMBEDDING_MODEL=nomic-embed-text EMBEDDING_DIM=768
+python -m scripts.doctor                     # 自检 Ollama 对话 + Embedding
+uvicorn app.main:app --reload --port 8000
+```
+
+> `PI_AGENT_ENABLED=false`：pi-agent 只接 DeepSeek，关闭后各 Agent 直接调用 Ollama。
+> 思考模型默认 `OLLAMA_REASONING_EFFORT=none`，否则 qwen3.5 会把 token 全用于 reasoning 而返回空内容。
 
 ### 可选依赖
 
@@ -86,8 +100,9 @@ uvicorn app.main:app --reload --port 8000
 | 变量 | 说明 |
 |---|---|
 | `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | 主力对话模型（默认 `deepseek-v4-flash`） |
-| `RELAY_API_KEY` / `RELAY_BASE_URL` | 中转站（OpenAI 兼容），用于 bge 等非 DeepSeek 模型 |
-| `EMBEDDING_PROVIDER` / `EMBEDDING_MODEL` | `relay`(`text-embedding-3-large`) / `local` / `hash` |
+| `LLM_PROVIDER` | `deepseek`（默认）/ `ollama`（本地测试，见 `OLLAMA_*`） |
+| `OLLAMA_BASE_URL` / `OLLAMA_MODEL` / `OLLAMA_REASONING_EFFORT` | Ollama 地址（默认 `http://localhost:11434/v1`）/ 模型 / 思考开关 |
+| `EMBEDDING_PROVIDER` / `EMBEDDING_MODEL` | `local`(`BAAI/bge-m3`) / `ollama`(`nomic-embed-text`, 768 维) / `hash` |
 | `STORAGE_MODE` | `mongo` / `memory` |
 | `LOOP_PHASE` | `human_in_loop` / `human_on_loop` / `human_out_of_loop` |
 | `AUTH_SECRET` | Token 签名密钥（生产务必修改） |
@@ -113,7 +128,7 @@ pytest
 
 1. **Harness 轻量编排**：Agent 走固定 DAG（Intent→Rewrite→Retrieve→Answer→Verify），
    不依赖 LangChain/AutoGen，输入输出结构化、可调试。
-2. **混合检索**：BM25（jieba）+ 向量（`text-embedding-3-large`/local/hash）RRF 融合 + 重排。
+2. **混合检索**：BM25（jieba）+ 向量（本地 `bge-m3`/hash）RRF 融合 + 重排。
 3. **Loop 自进化**：反馈队列 → Reflect 归因 → Skill/Hook/Rule 更新 → 灰度部署，
    按 `LOOP_PHASE` 控制人在环中/环上/环外。
 4. **统一存储抽象**：`DataStore` 接口 + Mongo/Memory 双实现，离线可跑、可测。

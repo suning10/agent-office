@@ -6,10 +6,12 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Optional
 
 import httpx
 
+from app.utils import tracing
 from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -63,6 +65,10 @@ class LLMClient(ABC):
     def _chat_url(self) -> str:
         return f"{self.base_url}/chat/completions"
 
+    def _extra_payload(self) -> dict[str, Any]:
+        """子类可追加提供方特有的请求参数。"""
+        return {}
+
     async def complete(
         self,
         messages: list[dict[str, str]],
@@ -80,26 +86,39 @@ class LLMClient(ABC):
             "temperature": self.temperature if temperature is None else temperature,
             "max_tokens": self.max_tokens if max_tokens is None else max_tokens,
             "stream": False,
+            **self._extra_payload(),
         }
         if response_format is not None:
             payload["response_format"] = response_format
 
-        try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                resp = await client.post(self._chat_url(), headers=self._headers(), json=payload)
-                resp.raise_for_status()
-                data = resp.json()
-        except httpx.HTTPStatusError as exc:
-            body = exc.response.text[:500]
-            logger.error("LLM HTTP %s: %s", exc.response.status_code, body)
-            raise LLMError(f"LLM 请求失败 {exc.response.status_code}: {body}") from exc
-        except httpx.HTTPError as exc:
-            raise LLMError(f"LLM 网络错误: {exc}") from exc
+        with tracing.observation(
+            f"{self.name()}.chat",
+            as_type="generation",
+            model=self.model,
+            input=messages,
+            model_parameters={k: payload[k] for k in ("temperature", "max_tokens")},
+        ) as gen:
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    resp = await client.post(self._chat_url(), headers=self._headers(), json=payload)
+                    resp.raise_for_status()
+                    data = resp.json()
+            except httpx.HTTPStatusError as exc:
+                body = exc.response.text[:500]
+                logger.error("LLM HTTP %s: %s", exc.response.status_code, body)
+                tracing.update(gen, level="ERROR", status_message=f"HTTP {exc.response.status_code}: {body}")
+                raise LLMError(f"LLM 请求失败 {exc.response.status_code}: {body}") from exc
+            except httpx.HTTPError as exc:
+                tracing.update(gen, level="ERROR", status_message=str(exc))
+                raise LLMError(f"LLM 网络错误: {exc}") from exc
 
-        try:
-            return data["choices"][0]["message"]["content"] or ""
-        except (KeyError, IndexError, TypeError) as exc:
-            raise LLMError(f"LLM 响应格式异常: {data}") from exc
+            try:
+                content = data["choices"][0]["message"]["content"] or ""
+            except (KeyError, IndexError, TypeError) as exc:
+                tracing.update(gen, level="ERROR", status_message="响应格式异常", output=data)
+                raise LLMError(f"LLM 响应格式异常: {data}") from exc
+            tracing.update(gen, output=content, usage_details=tracing.usage_from_openai(data))
+            return content
 
     async def complete_json(
         self,
@@ -122,8 +141,17 @@ class LLMClient(ABC):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
             "stream": True,
+            **self._extra_payload(),
         }
         payload.update(kwargs)
+        # 流式用非 current generation：async generator 跨 yield 切换 OTel 上下文会导致 detach 异常
+        gen = tracing.start_generation(
+            f"{self.name()}.chat_stream",
+            model=self.model,
+            input=messages,
+            model_parameters={k: payload[k] for k in ("temperature", "max_tokens")},
+        )
+        parts: list[str] = []
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 async with client.stream(
@@ -140,11 +168,19 @@ class LLMClient(ABC):
                             chunk = json.loads(data_str)
                             delta = chunk["choices"][0]["delta"].get("content")
                             if delta:
+                                if not parts:
+                                    tracing.update(gen, completion_start_time=datetime.now(timezone.utc))
+                                parts.append(delta)
                                 yield delta
                         except (KeyError, IndexError, json.JSONDecodeError):
                             continue
         except httpx.HTTPError as exc:
+            tracing.update(gen, level="ERROR", status_message=str(exc))
             raise LLMError(f"LLM 流式请求失败: {exc}") from exc
+        finally:
+            if gen is not None:
+                gen.update(output="".join(parts))
+                gen.end()
 
     @staticmethod
     def _extract_json(text: str) -> Any:

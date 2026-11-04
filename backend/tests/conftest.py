@@ -33,4 +33,4 @@ def parser():
 
 @pytest.fixture
 def embeddings(settings):
-    return EmbeddingClient(settings, relay=None)
+    return EmbeddingClient(settings)

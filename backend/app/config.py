@@ -1,6 +1,7 @@
 """集中配置：从环境变量 / .env 读取。
 
-DeepSeek 为主力对话模型；中转站（OpenAI 兼容）用于 bge 等非 DeepSeek 模型。
+对话模型：DeepSeek（默认）或本地 Ollama（LLM_PROVIDER=ollama，开发测试用）；
+Embedding / 重排在本地运行（sentence-transformers 或 Ollama）。
 """
 from __future__ import annotations
 
@@ -22,6 +23,9 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:8080"
     api_prefix: str = "/api/v1"
 
+    # ---- 对话模型提供方：deepseek | ollama ----
+    llm_provider: str = "deepseek"
+
     # ---- DeepSeek（主力对话模型） ----
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com"
@@ -30,17 +34,19 @@ class Settings(BaseSettings):
     deepseek_max_tokens: int = 2048
     deepseek_timeout: float = 60.0
 
-    # ---- 中转站（非 DeepSeek 模型，OpenAI 兼容） ----
-    relay_api_key: str = ""
-    relay_base_url: str = "https://yunwu.ai/v1"
-    relay_model: str = "gpt-5.5"
+    # ---- Ollama（本地测试：对话 + 可选 Embedding，OpenAI 兼容接口） ----
+    ollama_base_url: str = "http://localhost:11434/v1"
+    ollama_model: str = "qwen3.5:0.8b"
+    ollama_timeout: float = 120.0
+    # 思考模型（qwen3.5 等）默认会把 max_tokens 全耗在 reasoning 上导致 content 为空，默认关闭
+    ollama_reasoning_effort: str = "none"
 
     # ---- Embedding ----
-    # provider: relay | local | hash
-    # 注意：该中转站不提供 bge-m3 embedding，实测可用 text-embedding-3-large(3072)
-    embedding_provider: str = "relay"
-    embedding_model: str = "text-embedding-3-large"
-    embedding_dim: int = 3072
+    # provider: local（sentence-transformers）| ollama（EMBEDDING_MODEL=nomic-embed-text, DIM=768）
+    #           | hash（离线确定性向量，仅开发/测试）
+    embedding_provider: str = "local"
+    embedding_model: str = "BAAI/bge-m3"
+    embedding_dim: int = 1024
 
     # ---- 存储 ----
     storage_mode: str = "mongo"  # mongo | memory
@@ -58,6 +64,14 @@ class Settings(BaseSettings):
     vector_top: int = 20
     reranker_enabled: bool = True
     reranker_model: str = "BAAI/bge-reranker-v2-m3"
+
+    # ---- Langfuse 链路追踪（未配置 key 时自动禁用） ----
+    langfuse_enabled: bool = True
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = "https://cloud.langfuse.com"
+    langfuse_environment: str = "development"
+    langfuse_sample_rate: float = 1.0
 
     # ---- pi 智能体服务（Harness + Loop 深度整合） ----
     # Python Harness 是唯一生产问答运行时；pi-agent 保留为实验服务，默认不接主链。

@@ -1,16 +1,14 @@
 """重排序。
 
 优先级：
-1. RelayReranker —— 经中转站调用 bge-reranker-v2-m3（默认，需中转站 key）
-2. CrossEncoderReranker —— 本地 sentence-transformers（可选）
-3. HeuristicReranker —— 关键词重叠启发式（零成本回退）
+1. CrossEncoderReranker —— 本地 sentence-transformers 运行 bge-reranker-v2-m3
+2. HeuristicReranker —— 关键词重叠启发式（零成本回退）
 """
 from __future__ import annotations
 
 import re
-from typing import Any, Optional
+from typing import Any
 
-from app.llm.relay import RelayClient
 from app.retrieval.bm25 import tokenize
 from app.utils.logging import get_logger
 
@@ -40,28 +38,6 @@ class HeuristicReranker(Reranker):
         return ranked[:top_k]
 
 
-class RelayReranker(Reranker):
-    """经中转站调用 bge-reranker（bge-reranker-v2-m3）。"""
-
-    def __init__(self, relay: RelayClient, model_name: str = "BAAI/bge-reranker-v2-m3") -> None:
-        self.relay = relay
-        self.model_name = model_name
-
-    async def rerank(self, query: str, candidates: list[dict[str, Any]], top_k: int = 5) -> list[dict[str, Any]]:
-        if not candidates:
-            return []
-        docs = [c.get("content", "") for c in candidates]
-        try:
-            scores = await self.relay.rerank(query, docs, model=self.model_name)
-        except Exception as exc:  # noqa: BLE001 - 重排失败回退启发式
-            logger.warning("中转站 rerank 失败(%s)，回退启发式", exc)
-            return await HeuristicReranker().rerank(query, candidates, top_k)
-        for c, s in zip(candidates, scores):
-            c["rerank_score"] = float(s)
-        ranked = sorted(candidates, key=lambda x: x.get("rerank_score", 0.0), reverse=True)
-        return ranked[:top_k]
-
-
 class CrossEncoderReranker(Reranker):
     """本地 cross-encoder 重排（可选，需 sentence-transformers）。"""
 
@@ -70,26 +46,30 @@ class CrossEncoderReranker(Reranker):
         self._model = None
 
     async def rerank(self, query: str, candidates: list[dict[str, Any]], top_k: int = 5) -> list[dict[str, Any]]:
-        if self._model is None:
-            from sentence_transformers import CrossEncoder  # 延迟导入
+        if not candidates:
+            return []
+        try:
+            if self._model is None:
+                from sentence_transformers import CrossEncoder  # 延迟导入
 
-            self._model = CrossEncoder(self.model_name)
-        pairs = [(query, c.get("content", "")) for c in candidates]
-        scores = self._model.predict(pairs)
+                self._model = CrossEncoder(self.model_name)
+            pairs = [(query, c.get("content", "")) for c in candidates]
+            scores = self._model.predict(pairs)
+        except Exception as exc:  # noqa: BLE001 - 重排失败回退启发式
+            logger.warning("本地 rerank 失败(%s)，回退启发式", exc)
+            return await HeuristicReranker().rerank(query, candidates, top_k)
         for c, s in zip(candidates, scores):
             c["rerank_score"] = float(s)
         ranked = sorted(candidates, key=lambda x: x.get("rerank_score", 0.0), reverse=True)
         return ranked[:top_k]
 
 
-def build_reranker(enabled: bool, model_name: str = "BAAI/bge-reranker-v2-m3", relay: Optional[RelayClient] = None) -> Reranker:
+def build_reranker(enabled: bool, model_name: str = "BAAI/bge-reranker-v2-m3") -> Reranker:
     if enabled:
-        if relay is not None and relay.api_key:
-            return RelayReranker(relay, model_name)
         try:
             import sentence_transformers  # noqa: F401
 
             return CrossEncoderReranker(model_name)
         except ImportError:
-            logger.warning("未配置中转站 key 且未安装 sentence-transformers，回退启发式重排")
+            logger.warning("未安装 sentence-transformers，回退启发式重排")
     return HeuristicReranker()

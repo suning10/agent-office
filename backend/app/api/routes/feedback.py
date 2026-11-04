@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.api.schemas import ApiResponse, FeedbackRequest, ImplicitFeedbackRequest
 from app.api.deps import require_user
-from app.utils import metrics
+from app.utils import metrics, tracing
 from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -20,7 +20,8 @@ async def submit_feedback(body: FeedbackRequest, request: Request, user: dict = 
     if not body.session_id or not owned:
         raise HTTPException(status_code=404, detail="会话不存在")
     # 反馈必须对应本会话中的一条系统回答，防止伪造任意训练信号。
-    if not any(t.get("query") == body.query and t.get("answer") == body.answer for t in owned):
+    matched = [t for t in owned if t.get("query") == body.query and t.get("answer") == body.answer]
+    if not matched:
         raise HTTPException(status_code=400, detail="反馈与会话回答不匹配")
     await container.feedback_collector.collect_explicit(
         session_id=body.session_id,
@@ -31,6 +32,11 @@ async def submit_feedback(body: FeedbackRequest, request: Request, user: dict = 
         detail=body.detail,
     )
     metrics.FEEDBACK_TOTAL.labels(kind=body.signal).inc()
+    # 显式反馈写回 Langfuse trace，便于按差评筛选并回放问题请求
+    tracing.score_trace(
+        matched[-1].get("langfuse_trace_id") or "", "user_feedback",
+        1.0 if body.signal == "up" else 0.0, comment=body.signal,
+    )
     if body.signal == "up":
         metrics.record_adoption("up")
     elif body.signal == "down":

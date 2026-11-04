@@ -33,7 +33,7 @@ from app.memory.organization import OrganizationMemory
 from app.memory.context_builder import MemoryContext, MemoryContextBuilder
 from app.storage.store import DataStore
 from app.utils.logging import get_logger
-from app.utils import metrics
+from app.utils import metrics, tracing
 
 logger = get_logger(__name__)
 
@@ -96,6 +96,24 @@ class Orchestrator:
         external_memory_context: str = "",
     ) -> dict[str, Any]:
         session_id = session_id or uuid.uuid4().hex
+        # 一次问答 = 一条 Langfuse trace；session_id/user_id 传播到所有子 Agent 与 LLM 调用
+        with tracing.observation(
+            "orchestrator.answer", as_type="agent", input={"query": query, "dept_ids": dept_ids}
+        ) as span, tracing.trace_attributes(
+            session_id=session_id, user_id=user_id, metadata={"dept_id": self.settings.dept_id or "all"}
+        ):
+            result = await self._answer(query, session_id, user_id, dept_ids, external_memory_context)
+            tracing.update(span, output=result)
+            return result
+
+    async def _answer(
+        self,
+        query: str,
+        session_id: str,
+        user_id: str,
+        dept_ids: Optional[list[str]],
+        external_memory_context: str,
+    ) -> dict[str, Any]:
         started = time.perf_counter()
 
         # 0. 自动部门路由（用户未指定部门时，由 DeptRouter 匹配最符合的部门）
@@ -363,6 +381,7 @@ class Orchestrator:
                 "latency_ms": latency_ms,
                 "cost": 0.0,
                 "success": answer.verification.get("passed", True),
+                "langfuse_trace_id": tracing.current_trace_id(),
             }
         await self.loop_engine.record_trace(trace)
         await self.episodic_memory.append_event(

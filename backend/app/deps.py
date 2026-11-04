@@ -17,9 +17,9 @@ from app.harness.orchestrator import Orchestrator
 from app.integrations.pi_client import PiAgentClient
 from app.integrations.dept_agent_client import DepartmentAgentClient
 from app.integrations.pi_runtime import PiAgentRuntimeClient
-from app.llm.deepseek import DeepSeekClient
+from app.llm import build_llm_client
+from app.llm.client import LLMClient
 from app.llm.embeddings import EmbeddingClient
-from app.llm.relay import RelayClient
 from app.loop.feedback_collector import FeedbackCollector
 from app.loop.hook_engine import HookEngine
 from app.loop.loop_engine import LoopEngine
@@ -63,8 +63,7 @@ class Container:
     mongo: Optional[MongoDB]
     bm25: BM25Index
     vector_store: object
-    llm: DeepSeekClient
-    relay: RelayClient
+    llm: LLMClient
     embeddings: EmbeddingClient
     indexer: Indexer
     conflict_detector: ConflictDetector
@@ -107,14 +106,13 @@ def build_container(settings: Optional[Settings] = None) -> Container:
     session_store = build_session_store(settings)
     job_queue = JobQueue(store, session_store, settings.async_stream_name)
 
-    llm = DeepSeekClient(settings)
-    relay = RelayClient(settings)
-    embeddings = EmbeddingClient(settings, relay)
+    llm = build_llm_client(settings)
+    embeddings = EmbeddingClient(settings)
     pi_runtime = PiAgentRuntimeClient(settings)
 
     vector_store = build_vector_store(settings.vector_backend, store)
     bm25 = SharedBM25Index(store) if settings.vector_backend == "mongo" else BM25Index()
-    reranker = build_reranker(settings.reranker_enabled, settings.reranker_model, relay=relay)
+    reranker = build_reranker(settings.reranker_enabled, settings.reranker_model)
     hybrid = HybridRetriever(
         bm25=bm25,
         vector_store=vector_store,
@@ -227,7 +225,6 @@ def build_container(settings: Optional[Settings] = None) -> Container:
         bm25=bm25,
         vector_store=vector_store,
         llm=llm,
-        relay=relay,
         embeddings=embeddings,
         indexer=indexer,
         conflict_detector=conflict_detector,

@@ -5,6 +5,7 @@ from typing import Any
 
 from app.harness.base import Answer, VerificationResult
 from app.llm.client import ChatMessage, LLMClient
+from app.utils import tracing
 from app.utils.logging import get_logger
 from app.integrations.pi_runtime import PiAgentRuntimeClient
 
@@ -37,6 +38,7 @@ class VerifierAgent:
         self.pi_runtime = pi_runtime
         self.timeout = timeout
 
+    @tracing.observe(name="verifier_agent", as_type="evaluator")
     async def verify(self, query: str, answer: Answer, chunks: list[dict[str, Any]]) -> VerificationResult:
         if not chunks:
             return VerificationResult(passed=True, score=0.9, issues=[])

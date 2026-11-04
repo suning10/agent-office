@@ -11,6 +11,7 @@ from starlette.responses import Response
 from app.api.router import api_router, root_router
 from app.config import get_settings
 from app.deps import build_container
+from app.utils import tracing
 from app.utils.logging import get_logger, setup_logging
 from app.loop.default_skills import seed_default_skills
 
@@ -80,6 +81,7 @@ async def lifespan(app: FastAPI):
     if hasattr(container.session_store, "close"):
         await container.session_store.close()
     await container.pi_runtime.close()
+    tracing.shutdown()  # 刷出缓冲中的 Langfuse 事件
     logger.info("应用已关闭")
 
 

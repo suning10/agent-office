@@ -6,6 +6,7 @@ from typing import Any
 from app.harness.base import Intent
 from app.llm.client import ChatMessage, LLMClient
 from app.storage.store import DataStore
+from app.utils import tracing
 from app.utils.logging import get_logger
 from app.integrations.pi_runtime import PiAgentRuntimeClient
 
@@ -42,6 +43,7 @@ class IntentAgent:
         self.pi_runtime = pi_runtime
         self.timeout = timeout
 
+    @tracing.observe(name="intent_agent", as_type="agent")
     async def infer(self, query: str, user_id: str = "", memory_context: str = "") -> Intent:
         departments = await self.store.list_departments()
         dept_desc = ", ".join(f"{d['_id']}({d.get('name', '')})" for d in departments) or "dept_all(通用)"

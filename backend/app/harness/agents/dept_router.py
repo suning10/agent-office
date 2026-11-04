@@ -10,6 +10,7 @@ from typing import Any
 
 from app.llm.client import ChatMessage, LLMClient
 from app.storage.store import DataStore
+from app.utils import tracing
 from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -42,6 +43,7 @@ class DeptRouter:
         self.llm = llm
         self.store = store
 
+    @tracing.observe(name="dept_router", as_type="agent")
     async def route(self, query: str) -> dict[str, Any]:
         departments = await self.store.list_departments()
         dept_names = {d["_id"]: d.get("name", d["_id"]) for d in departments}

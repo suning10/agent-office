@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 from app.harness.base import Answer, Citation, Intent
 from app.llm.client import ChatMessage, LLMClient
+from app.utils import tracing
 from app.utils.logging import get_logger
 from app.integrations.pi_runtime import PiAgentRuntimeClient
 
@@ -37,6 +38,7 @@ class AnswerAgent:
         self.pi_runtime = pi_runtime
         self.timeout = timeout
 
+    @tracing.observe(name="answer_agent", as_type="agent")
     async def generate(
         self,
         query: str,

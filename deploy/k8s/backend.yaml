@@ -43,25 +43,18 @@ spec:
             - name: UPLOAD_STORAGE_DIR
               value: "/data/uploads"
             - name: EMBEDDING_PROVIDER
-              value: "relay"
+              value: "local"
             - name: EMBEDDING_MODEL
-              value: "text-embedding-3-large"
+              value: "BAAI/bge-m3"
             - name: DEEPSEEK_MODEL
               value: "deepseek-v4-flash"
             - name: DEEPSEEK_BASE_URL
               value: "https://api.deepseek.com"
-            - name: RELAY_BASE_URL
-              value: "https://yunwu.ai/v1"
             - name: DEEPSEEK_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: wenshu-secrets
                   key: DEEPSEEK_API_KEY
-            - name: RELAY_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: wenshu-secrets
-                  key: RELAY_API_KEY
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:

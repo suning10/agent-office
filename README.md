@@ -93,7 +93,7 @@ docker compose exec backend python -m scripts.ingest_department_files --base /ap
 ### 模型连通性自检（doctor）
 
 ```bash
-# 验证 DeepSeek + 中转站（bge 重排/Embedding）能否调用
+# 验证 DeepSeek 与本地 bge 重排/Embedding 能否调用
 docker compose exec backend python -m scripts.doctor
 
 # 验证 pi 框架 + DeepSeek 是否正常
@@ -136,9 +136,8 @@ BACKEND_URL=http://localhost:8000 npm run dev   # :3000
 | 变量 | 说明 | 默认 |
 |---|---|---|
 | `DEEPSEEK_API_KEY` / `DEEPSEEK_MODEL` | 主力对话模型 | `deepseek-v4-flash` |
-| `RELAY_API_KEY` / `RELAY_BASE_URL` | 中转站（非 DeepSeek 模型） | `https://yunwu.ai/v1` |
-| `EMBEDDING_MODEL` | 向量模型（经中转站） | `text-embedding-3-large` |
-| `RERANKER_MODEL` | bge 重排模型（经中转站） | `BAAI/bge-reranker-v2-m3` |
+| `EMBEDDING_MODEL` | 向量模型（本地 sentence-transformers） | `BAAI/bge-m3` |
+| `RERANKER_MODEL` | bge 重排模型（本地 CrossEncoder） | `BAAI/bge-reranker-v2-m3` |
 | `PI_AGENT_ENABLED` | 是否使用 pi 统一执行概率性 Agent；失败时自动回退 Python 本地实现 | `true` |
 | `PI_RUNTIME_TIMEOUT_*` | pi Intent/Rewrite/Answer/Verify/Reflect 分阶段超时 | `8/10/45/20/45s` |
 | `DEPT_AGENTS_ENABLED` / `DEPT_ID` | 全局部门路由开关 / 部门 Pod 强制范围 | `false` / 空 |
@@ -154,9 +153,8 @@ BACKEND_URL=http://localhost:8000 npm run dev   # :3000
 | `MONGO_INITDB_ROOT_USERNAME` / `MONGO_INITDB_ROOT_PASSWORD` | MongoDB 根账号（compose 初始化） | `wenshu_admin` / 强随机 |
 | `REDIS_PASSWORD` | Redis 口令（compose requirepass） | 强随机 |
 
-> 已通过 `scripts/doctor.py` 实测：DeepSeek `deepseek-v4-flash` ✅、中转站 `gpt-5.5` ✅、
-> `text-embedding-3-large` ✅、bge 重排 `BAAI/bge-reranker-v2-m3` ✅。
-> 注意：该中转站**不提供** `bge-m3` embedding 与 `gpt-5.5-pro`（这两个名字无效）。
+> `scripts/doctor.py` 检查：DeepSeek `deepseek-v4-flash` 对话、本地 `BAAI/bge-m3` Embedding、本地 bge 重排 `BAAI/bge-reranker-v2-m3`。
+> 本地模型首次运行时从 Hugging Face 自动下载。
 
 ## 各模块 README
 
@@ -170,7 +168,7 @@ BACKEND_URL=http://localhost:8000 npm run dev   # :3000
 
 Python 3.11 · FastAPI · MongoDB(motor) · Redis · Next.js 15 · React 19 · TypeScript ·
 [pi](https://github.com/earendil-works/pi)（pi-agent-core + pi-ai）· DeepSeek（对话）·
-text-embedding-3-large / bge-reranker-v2-m3（经中转站）· Docker · Kubernetes · Helm
+bge-m3 / bge-reranker-v2-m3（本地）· Docker · Kubernetes · Helm
 
 ## 验证
 

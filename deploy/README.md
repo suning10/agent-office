@@ -51,7 +51,6 @@ kubectl apply -f deploy/k8s/ingress.yaml
 ```bash
 helm install wenshu deploy/helm/wenshu -n wenshu --create-namespace \
   --set secrets.deepseekApiKey=sk-... \
-  --set secrets.relayApiKey=sk-... \
   --set secrets.authSecret=<强随机值> \
   --set secrets.internalApiToken=<强随机值> \
   --set secrets.mongodbUri="mongodb://user:pass@mongodb:27017/wenshu?authSource=admin" \

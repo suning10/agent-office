@@ -19,7 +19,7 @@ pi 服务通过 `fetch` 调用 Python 后端的**内部接口**（`/api/v1/inter
 services/pi-agent/
 ├── src/
 │   ├── config.ts        # 环境配置
-│   ├── providers.ts     # pi-ai 提供方（DeepSeek / 中转站，OpenAI 兼容）
+│   ├── providers.ts     # pi-ai 提供方（DeepSeek，OpenAI 兼容）
 │   ├── runtime.ts       # 运行时装配（model + streamFn + tools）
 │   ├── tools.ts         # AgentTool 工具集（检索/校历/部门/术语/反馈/沉淀产物）
 │   ├── agents.ts        # Agent 定义 + runAgent 运行器 + prompt

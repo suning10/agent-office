@@ -1,8 +1,7 @@
 /**
  * 模型提供方装配：基于 @earendil-works/pi-ai 的统一 LLM API。
  *
- * - deepseek：主力对话模型（OpenAI 兼容，https://api.deepseek.com）
- * - relay   ：中转站（OpenAI 兼容，https://yunwu.ai/v1），用于非 DeepSeek 模型
+ * - deepseek：唯一对话模型（OpenAI 兼容，https://api.deepseek.com）
  */
 import {
   createModels,
@@ -54,21 +53,6 @@ export function buildModels(config: Config): Models {
       auth: { apiKey: envApiKeyAuth("DeepSeek API key", ["DEEPSEEK_API_KEY"]) },
       models: [
         openAIModel("deepseek", config.deepseekModel, "DeepSeek 对话", config.deepseekBaseUrl),
-      ],
-      api: openAICompletionsApi(),
-    }),
-  );
-
-  models.setProvider(
-    createProvider({
-      id: "relay",
-      name: "中转站",
-      baseUrl: config.relayBaseUrl,
-      auth: { apiKey: envApiKeyAuth("中转站 API key", ["RELAY_API_KEY"]) },
-      models: [
-        openAIModel("relay", config.relayModel, "中转站对话", config.relayBaseUrl, {
-          supportsUsageInStreaming: false,
-        }),
       ],
       api: openAICompletionsApi(),
     }),

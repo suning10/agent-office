@@ -26,9 +26,9 @@ spec:
             - name: STORAGE_MODE
               value: "mongo"
             - name: EMBEDDING_PROVIDER
-              value: "relay"
+              value: "local"
             - name: EMBEDDING_MODEL
-              value: "text-embedding-3-large"
+              value: "BAAI/bge-m3"
             - name: VECTOR_BACKEND
               value: "mongo"
             - name: LOOP_PHASE
@@ -38,11 +38,6 @@ spec:
                 secretKeyRef:
                   name: wenshu-secrets
                   key: DEEPSEEK_API_KEY
-            - name: RELAY_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: wenshu-secrets
-                  key: RELAY_API_KEY
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:

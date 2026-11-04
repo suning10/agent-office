@@ -43,11 +43,6 @@ spec:
                 secretKeyRef:
                   name: wenshu-secrets
                   key: DEEPSEEK_API_KEY
-            - name: RELAY_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: wenshu-secrets
-                  key: RELAY_API_KEY
             - name: INTERNAL_API_TOKEN
               valueFrom:
                 secretKeyRef:

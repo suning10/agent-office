@@ -8,7 +8,6 @@ image:
 # 密钥（生产建议使用外部 Secret / SealedSecret，勿提交真实值）
 secrets:
   deepseekApiKey: ""
-  relayApiKey: ""
   authSecret: "change-me-strong-random-secret"
   internalApiToken: "change-me-strong-random-token"
   mongoUser: "wenshu_admin"
@@ -49,9 +48,8 @@ uploads:
 model:
   deepseekModel: "deepseek-v4-flash"
   deepseekBaseUrl: "https://api.deepseek.com"
-  relayBaseUrl: "https://yunwu.ai/v1"
-  embeddingProvider: "relay"
-  embeddingModel: "text-embedding-3-large"
+  embeddingProvider: "local"
+  embeddingModel: "BAAI/bge-m3"
   vectorBackend: "mongo"
 
 # 部门 Agent（模板化：每项渲染一个独立 Deployment + HPA）

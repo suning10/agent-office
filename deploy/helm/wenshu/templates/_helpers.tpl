@@ -21,18 +21,11 @@ app.kubernetes.io/version: {{ .Chart.AppVersion }}
   value: {{ .Values.model.deepseekModel | quote }}
 - name: DEEPSEEK_BASE_URL
   value: {{ .Values.model.deepseekBaseUrl | quote }}
-- name: RELAY_BASE_URL
-  value: {{ .Values.model.relayBaseUrl | quote }}
 - name: DEEPSEEK_API_KEY
   valueFrom:
     secretKeyRef:
       name: {{ include "wenshu.fullname" . }}-secret
       key: DEEPSEEK_API_KEY
-- name: RELAY_API_KEY
-  valueFrom:
-    secretKeyRef:
-      name: {{ include "wenshu.fullname" . }}-secret
-      key: RELAY_API_KEY
 - name: MONGODB_URI
   valueFrom:
     secretKeyRef:

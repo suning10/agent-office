@@ -17,7 +17,7 @@ docker compose up --build
 
 ```bash
 helm install wenshu deploy/helm/wenshu -n wenshu --create-namespace \
-  --set secrets.deepseekApiKey=... --set secrets.relayApiKey=...
+  --set secrets.deepseekApiKey=...
 ```
 
 ### 部门 Agent 弹性伸缩
